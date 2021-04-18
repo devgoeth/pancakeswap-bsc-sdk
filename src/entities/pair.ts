@@ -20,6 +20,9 @@ import {
 import { sqrt, parseBigintIsh } from '../utils'
 import { InsufficientReservesError, InsufficientInputAmountError } from '../errors'
 import { Token } from './token'
+import { Contract } from "@ethersproject/contracts";
+import factoryAbi from '../abis/Factory.json'
+import { getDefaultProvider, getNetwork } from "@ethersproject/providers";
 
 let PAIR_ADDRESS_CACHE: { [token0Address: string]: { [token1Address: string]: string } } = {}
 
@@ -27,7 +30,7 @@ export class Pair {
   public readonly liquidityToken: Token
   private readonly tokenAmounts: [TokenAmount, TokenAmount]
 
-  public static getAddress(tokenA: Token, tokenB: Token): string {
+  public static getAddress(tokenA: Token, tokenB: Token, factoryAddress = FACTORY_ADDRESS): string {
     const tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
 
     if (PAIR_ADDRESS_CACHE?.[tokens[0].address]?.[tokens[1].address] === undefined) {
@@ -36,7 +39,7 @@ export class Pair {
         [tokens[0].address]: {
           ...PAIR_ADDRESS_CACHE?.[tokens[0].address],
           [tokens[1].address]: getCreate2Address(
-            FACTORY_ADDRESS,
+            factoryAddress,
             keccak256(['bytes'], [pack(['address', 'address'], [tokens[0].address, tokens[1].address])]),
             INIT_CODE_HASH
           )
@@ -45,6 +48,15 @@ export class Pair {
     }
 
     return PAIR_ADDRESS_CACHE[tokens[0].address][tokens[1].address]
+  }
+
+  public static async getAddressFromFactory(
+      exchangeAddress: string,
+      provider = getDefaultProvider(getNetwork(ChainId.MAINNET))
+  ): Promise<string> {
+    const address = await new Contract(exchangeAddress, factoryAbi, provider)
+    console.log(address)
+    return address;
   }
 
   public constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount) {

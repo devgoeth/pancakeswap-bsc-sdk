@@ -6,7 +6,7 @@ import { Pair } from './entities/pair'
 import IPancakePair from '@pancakeswap-libs/pancake-swap-core/build/IPancakePair.json'
 import invariant from 'tiny-invariant'
 import ERC20 from './abis/ERC20.json'
-import { ChainId } from './constants'
+import {ChainId, FACTORY_ADDRESS} from './constants'
 import { Token } from './entities/token'
 
 let TOKEN_DECIMALS_CACHE: { [chainId: number]: { [address: string]: number } } = {
@@ -37,7 +37,7 @@ export abstract class Fetcher {
     address: string,
     provider = getDefaultProvider(getNetwork(chainId)),
     symbol?: string,
-    name?: string
+    name?: string,
   ): Promise<Token> {
     const parsedDecimals =
       typeof TOKEN_DECIMALS_CACHE?.[chainId]?.[address] === 'number'
@@ -60,14 +60,16 @@ export abstract class Fetcher {
    * @param tokenA first token
    * @param tokenB second token
    * @param provider the provider to use to fetch the data
+   * @param factoryAddress address of exchange
    */
   public static async fetchPairData(
     tokenA: Token,
     tokenB: Token,
-    provider = getDefaultProvider(getNetwork(tokenA.chainId))
+    provider = getDefaultProvider(getNetwork(tokenA.chainId)),
+    factoryAddress = FACTORY_ADDRESS
   ): Promise<Pair> {
     invariant(tokenA.chainId === tokenB.chainId, 'CHAIN_ID')
-    const address = Pair.getAddress(tokenA, tokenB)
+    const address = await Pair.getAddressFromFactory(factoryAddress, provider)
     const [reserves0, reserves1] = await new Contract(address, IPancakePair.abi, provider).getReserves()
     const balances = tokenA.sortsBefore(tokenB) ? [reserves0, reserves1] : [reserves1, reserves0]
     return new Pair(new TokenAmount(tokenA, balances[0]), new TokenAmount(tokenB, balances[1]))
