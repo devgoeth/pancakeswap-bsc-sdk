@@ -23,7 +23,7 @@ import { InsufficientReservesError, InsufficientInputAmountError } from '../erro
 import { Token } from './token'
 import { Contract } from "@ethersproject/contracts";
 import factoryAbi from '../abis/Factory.json'
-import {BaseProvider, getDefaultProvider, getNetwork} from "@ethersproject/providers";
+import { BaseProvider, getDefaultProvider, getNetwork } from "@ethersproject/providers";
 
 let PAIR_ADDRESS_CACHE: { [token0Address: string]: { [token1Address: string]: string } } = {}
 
