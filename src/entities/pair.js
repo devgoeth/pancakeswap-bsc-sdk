@@ -4,10 +4,13 @@ import invariant from 'tiny-invariant';
 import JSBI from 'jsbi';
 import { pack, keccak256 } from '@ethersproject/solidity';
 import { getCreate2Address } from '@ethersproject/address';
-import { FACTORY_ADDRESS, INIT_CODE_HASH, MINIMUM_LIQUIDITY, ZERO, ONE, FIVE, _998, _1000 } from '../constants';
+import { FACTORY_ADDRESS, INIT_CODE_HASH, MINIMUM_LIQUIDITY, ZERO, ONE, FIVE, _998, _1000, ChainId } from '../constants';
 import { sqrt, parseBigintIsh } from '../utils';
 import { InsufficientReservesError, InsufficientInputAmountError } from '../errors';
 import { Token } from './token';
+import { Contract } from "@ethersproject/contracts";
+import factoryAbi from '../abis/Factory.json';
+import { getDefaultProvider, getNetwork } from "@ethersproject/providers";
 let PAIR_ADDRESS_CACHE = {};
 export class Pair {
     constructor(tokenAmountA, tokenAmountB) {
@@ -30,6 +33,10 @@ export class Pair {
             };
         }
         return PAIR_ADDRESS_CACHE[tokens[0].address][tokens[1].address];
+    }
+    static async getAddressFromFactory(tokenA, tokenB, exchangeAddress, provider = getDefaultProvider(getNetwork(ChainId.MAINNET))) {
+        const tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA]; // does safety checks
+        return await new Contract(exchangeAddress, factoryAbi, provider).getPair(tokens[0].address, tokens[1].address);
     }
     /**
      * Returns true if the token is either token0 or token1

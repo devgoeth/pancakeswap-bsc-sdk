@@ -54,7 +54,7 @@ export class Fetcher {
      */
     static async fetchPairData(tokenA, tokenB, provider = getDefaultProvider(getNetwork(tokenA.chainId)), factoryAddress = FACTORY_ADDRESS) {
         invariant(tokenA.chainId === tokenB.chainId, 'CHAIN_ID');
-        const address = Pair.getAddress(tokenA, tokenB, factoryAddress);
+        const address = await Pair.getAddressFromFactory(tokenA, tokenB, factoryAddress, provider);
         const [reserves0, reserves1] = await new Contract(address, IPancakePair.abi, provider).getReserves();
         const balances = tokenA.sortsBefore(tokenB) ? [reserves0, reserves1] : [reserves1, reserves0];
         return new Pair(new TokenAmount(tokenA, balances[0]), new TokenAmount(tokenB, balances[1]));

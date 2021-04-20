@@ -4,7 +4,6 @@ import invariant from 'tiny-invariant'
 import JSBI from 'jsbi'
 import { pack, keccak256 } from '@ethersproject/solidity'
 import { getCreate2Address } from '@ethersproject/address'
-import { ethers } from 'ethers'
 
 import {
   BigintIsh,
@@ -23,7 +22,7 @@ import { InsufficientReservesError, InsufficientInputAmountError } from '../erro
 import { Token } from './token'
 import { Contract } from "@ethersproject/contracts";
 import factoryAbi from '../abis/Factory.json'
-import { BaseProvider, getDefaultProvider, getNetwork } from "@ethersproject/providers";
+import { getDefaultProvider, getNetwork } from "@ethersproject/providers";
 
 let PAIR_ADDRESS_CACHE: { [token0Address: string]: { [token1Address: string]: string } } = {}
 
@@ -51,44 +50,14 @@ export class Pair {
     return PAIR_ADDRESS_CACHE[tokens[0].address][tokens[1].address]
   }
 
-  public static async getPair(
-      a: Token,
-      b: Token,
-      provider: BaseProvider,
-  ): Promise<Pair> {
-    const pairAddress = Pair.getAddress(a, b);
-
-    const pairContract = new ethers.Contract(
-        pairAddress,
-        factoryAbi,
-        provider,
-    );
-
-    const reserves = await pairContract.getReserves();
-
-    const [reserve0, reserve1] = reserves;
-
-    const tokens = [a, b];
-    const [token0, token1] = tokens[0].sortsBefore(tokens[1])
-        ? tokens
-        : [tokens[1], tokens[0]];
-
-    const pair = new Pair(
-        new TokenAmount(token0, reserve0),
-        new TokenAmount(token1, reserve1),
-    );
-
-    return pair;
-  }
-
   public static async getAddressFromFactory(
       tokenA: Token,
       tokenB: Token,
       exchangeAddress: string,
       provider = getDefaultProvider(getNetwork(ChainId.MAINNET))
   ): Promise<string> {
-    const tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
-    return await new Contract(exchangeAddress, factoryAbi, provider).getPair(tokens[0].address,tokens[1].address)
+    const tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA]; // does safety checks
+    return await new Contract(exchangeAddress, factoryAbi, provider).getPair(tokens[0].address,tokens[1].address);
   }
 
   public constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount) {
