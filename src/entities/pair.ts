@@ -82,10 +82,13 @@ export class Pair {
   }
 
   public static async getAddressFromFactory(
+      tokenA: Token,
+      tokenB: Token,
       exchangeAddress: string,
       provider = getDefaultProvider(getNetwork(ChainId.MAINNET))
   ): Promise<string> {
-    return await new Contract(exchangeAddress, factoryAbi, provider)
+    const tokens = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
+    return await new Contract(exchangeAddress, factoryAbi, provider).getPair(tokens[0].address,tokens[1].address)
   }
 
   public constructor(tokenAmountA: TokenAmount, tokenAmountB: TokenAmount) {
